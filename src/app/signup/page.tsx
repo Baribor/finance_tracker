@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [state, setState] = useState("");
   // Secretary personal details
   const [secretaryName, setSecretaryName] = useState("");
+  const [secretaryEmail, setSecretaryEmail] = useState("");
   const [secretaryStateCode, setSecretaryStateCode] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +32,7 @@ export default function SignupPage() {
         lga: lga.trim(),
         state: state.trim(),
         secretaryName: secretaryName.trim(),
+        secretaryEmail: secretaryEmail.trim(),
         secretaryStateCode: secretaryStateCode.trim(),
       }),
     });
@@ -179,6 +181,22 @@ export default function SignupPage() {
                     placeholder="Your full name"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1.5">
+                    Email Address <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={secretaryEmail}
+                    onChange={(e) => setSecretaryEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                    placeholder="your@email.com"
+                    required
+                  />
+                  <p className="text-xs text-text-secondary mt-1">
+                    You will receive approval or rejection updates at this address.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text mb-1.5">

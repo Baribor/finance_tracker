@@ -6,6 +6,7 @@ import SignupRequest from "@/models/SignupRequest";
 import Group from "@/models/Group";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { sendApprovalEmail, sendRejectionEmail } from "@/lib/email";
 
 export async function PATCH(
   req: NextRequest,
@@ -48,6 +49,19 @@ export async function PATCH(
     request.reviewedAt = new Date();
     request.rejectionReason = rejectionReason?.trim() || "";
     await request.save();
+
+    // Send rejection email — non-blocking, failure should not break the response
+    if (request.secretaryEmail) {
+      sendRejectionEmail({
+        to: request.secretaryEmail,
+        secretaryName: request.secretaryName,
+        groupName: request.groupName,
+        reason: request.rejectionReason || undefined,
+      }).catch((err) =>
+        console.error("[email] Failed to send rejection email:", err)
+      );
+    }
+
     return NextResponse.json({ message: "Request rejected" });
   }
 
@@ -91,6 +105,18 @@ export async function PATCH(
   request.reviewedBy = session.user.id as unknown as typeof request.reviewedBy;
   request.reviewedAt = new Date();
   await request.save();
+
+  // Send approval email — non-blocking, failure should not break the response
+  if (request.secretaryEmail) {
+    sendApprovalEmail({
+      to: request.secretaryEmail,
+      secretaryName: request.secretaryName,
+      groupName: request.groupName,
+      stateCode: request.secretaryStateCode,
+    }).catch((err) =>
+      console.error("[email] Failed to send approval email:", err)
+    );
+  }
 
   return NextResponse.json({
     message: `Group "${group.name}" created and secretary account activated`,

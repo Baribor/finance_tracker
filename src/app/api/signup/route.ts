@@ -13,16 +13,26 @@ export async function POST(req: NextRequest) {
     groupDescription,
     secretaryName,
     secretaryStateCode,
+    secretaryEmail,
     lga,
     state,
   } = body;
 
-  if (!groupName || !secretaryName || !secretaryStateCode) {
+  if (!groupName || !secretaryName || !secretaryStateCode || !secretaryEmail) {
     return NextResponse.json(
       {
         error:
-          "Group name, secretary name, and secretary state code are required",
+          "Group name, secretary name, state code, and email address are required",
       },
+      { status: 400 }
+    );
+  }
+
+  // Basic email format check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(secretaryEmail.trim())) {
+    return NextResponse.json(
+      { error: "Please provide a valid email address" },
       { status: 400 }
     );
   }
@@ -69,6 +79,7 @@ export async function POST(req: NextRequest) {
     groupDescription: groupDescription?.trim() || "",
     secretaryName: secretaryName.trim(),
     secretaryStateCode: code,
+    secretaryEmail: secretaryEmail.trim().toLowerCase(),
     lga: lga?.trim() || "",
     state: state?.trim() || "",
   });

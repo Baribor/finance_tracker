@@ -7,6 +7,7 @@ export interface ISignupRequest extends Document {
   // Secretary personal details
   secretaryName: string;
   secretaryStateCode: string;
+  secretaryEmail: string;
   // Location / LGA info (optional useful context for admin)
   lga: string;
   state: string;
@@ -25,6 +26,7 @@ const SignupRequestSchema = new Schema<ISignupRequest>(
     groupDescription: { type: String, default: "", trim: true },
     secretaryName: { type: String, required: true, trim: true },
     secretaryStateCode: { type: String, required: true, trim: true, uppercase: true },
+    secretaryEmail: { type: String, required: true, trim: true, lowercase: true },
     lga: { type: String, default: "", trim: true },
     state: { type: String, default: "", trim: true },
     status: {

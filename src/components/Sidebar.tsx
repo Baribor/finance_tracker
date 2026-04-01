@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const adminLinks = [
   { href: "/admin", label: "Overview", icon: "📊" },
@@ -36,8 +36,18 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const [pendingSignups, setPendingSignups] = useState(0);
 
   const role = session?.user?.role;
+
+  useEffect(() => {
+    if (role !== "admin") return;
+    fetch("/api/admin/signup-requests/count")
+      .then((r) => r.json())
+      .then((d) => setPendingSignups(d.pending ?? 0))
+      .catch(() => {});
+  }, [role]);
+
   const links =
     role === "admin"
       ? adminLinks
@@ -100,6 +110,8 @@ export default function Sidebar() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {links.map((link) => {
             const isActive = pathname === link.href;
+            const showBadge =
+              link.href === "/admin/signup-requests" && pendingSignups > 0;
             return (
               <Link
                 key={link.href}
@@ -112,7 +124,12 @@ export default function Sidebar() {
                 }`}
               >
                 <span className="text-base">{link.icon}</span>
-                {link.label}
+                <span className="flex-1">{link.label}</span>
+                {showBadge && (
+                  <span className="min-w-[20px] h-5 bg-amber-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+                    {pendingSignups > 99 ? "99+" : pendingSignups}
+                  </span>
+                )}
               </Link>
             );
           })}
