@@ -30,20 +30,34 @@ export default function PortalPage() {
   const { data: session } = useSession();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [groupName, setGroupName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isCompleted = session?.user?.serviceStatus === "completed";
 
   useEffect(() => {
     if (!session?.user?.id) return;
-    Promise.all([
-      fetch(`/api/payments?memberId=${session.user.id}`).then((r) => r.json()),
-      fetch("/api/categories").then((r) => r.json()),
-    ]).then(([paymentsData, categoriesData]) => {
+
+    const fetchAll = async () => {
+      const [paymentsRes, categoriesRes, groupRes] = await Promise.all([
+        fetch(`/api/payments?memberId=${session.user.id}`),
+        fetch("/api/categories"),
+        fetch("/api/groups/me"),
+      ]);
+
+      const [paymentsData, categoriesData, groupData] = await Promise.all([
+        paymentsRes.json(),
+        categoriesRes.json(),
+        groupRes.ok ? groupRes.json() : null,
+      ]);
+
       setPayments(paymentsData);
       setCategories(categoriesData);
+      if (groupData && groupData.name) setGroupName(groupData.name);
       setLoading(false);
-    });
+    };
+
+    fetchAll();
   }, [session]);
 
   if (loading) {
@@ -77,7 +91,7 @@ export default function PortalPage() {
           Welcome, {session?.user?.name}
         </h1>
         <p className="text-text-secondary text-sm mt-1">
-          Your payment overview and contribution status
+          {groupName ? `${groupName} · ` : ""}Your payment overview and contribution status
         </p>
       </div>
 
