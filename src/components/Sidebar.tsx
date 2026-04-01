@@ -8,6 +8,7 @@ import { useState } from "react";
 const adminLinks = [
   { href: "/admin", label: "Overview", icon: "📊" },
   { href: "/admin/groups", label: "CDS Groups", icon: "🏢" },
+  { href: "/admin/signup-requests", label: "Signup Requests", icon: "📋" },
 ];
 
 const secretaryLinks = [

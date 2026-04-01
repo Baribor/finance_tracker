@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, FormEvent } from "react";
@@ -115,6 +116,13 @@ export default function LoginPage() {
             Default password is your state code. Change it after first login.
           </p>
         </div>
+
+        <p className="text-center text-sm text-text-secondary mt-6">
+          New CDS group?{" "}
+          <Link href="/signup" className="text-primary font-medium hover:underline">
+            Register your group
+          </Link>
+        </p>
       </div>
     </div>
   );

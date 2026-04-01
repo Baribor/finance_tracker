@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, ReactNode } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -12,6 +12,7 @@ interface ConfirmDialogProps {
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  children?: ReactNode;
 }
 
 export default function ConfirmDialog({
@@ -24,6 +25,7 @@ export default function ConfirmDialog({
   loading = false,
   onConfirm,
   onCancel,
+  children,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -52,8 +54,9 @@ export default function ConfirmDialog({
     >
       <div className="p-6">
         <h3 className="text-lg font-semibold text-text mb-2">{title}</h3>
-        <p className="text-sm text-text-secondary mb-6">{message}</p>
-        <div className="flex items-center justify-end gap-3">
+        <p className="text-sm text-text-secondary mb-4">{message}</p>
+        {children}
+        <div className="flex items-center justify-end gap-3 mt-6">
           <button
             onClick={onCancel}
             disabled={loading}
