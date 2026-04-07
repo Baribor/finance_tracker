@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, FormEvent } from "react";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function LoginPage() {
   const [stateCode, setStateCode] = useState("");
@@ -48,22 +49,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-white to-amber-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-white to-amber-50 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg">
-            <span className="text-white text-2xl font-bold">₦</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-2xl mb-4 shadow-lg">
+            <span className="text-white text-xl font-bold">₦</span>
           </div>
-          <h1 className="text-3xl font-bold text-text">CDS Finance Tracker</h1>
-          <p className="text-text-secondary mt-2">
-            Sign in to manage group finances
+          <h1 className="text-2xl font-bold text-text">CDS Finance Tracker</h1>
+          <p className="text-text-secondary text-sm mt-1.5">
+            Sign in to manage your group finances
           </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-border p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 text-danger text-sm p-3 rounded-lg border border-red-200">
+              <div className="bg-red-50 text-danger text-sm p-3.5 rounded-lg border border-red-200 flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
               </div>
             )}
@@ -76,7 +80,7 @@ export default function LoginPage() {
                 type="text"
                 value={stateCode}
                 onChange={(e) => setStateCode(e.target.value)}
-                className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm"
                 placeholder="Enter your state code"
                 required
               />
@@ -90,7 +94,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors text-sm"
                 placeholder="Enter your password"
                 required
               />
@@ -99,7 +103,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-sm"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -112,9 +116,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-xs text-text-secondary text-center mt-6">
-            Default password is your state code. Change it after first login.
-          </p>
+          <div className="mt-6 pt-5 border-t border-border text-center">
+            <p className="text-xs text-text-secondary">
+              Default password is your state code. Change it after first login.
+            </p>
+          </div>
         </div>
 
         <p className="text-center text-sm text-text-secondary mt-6">
@@ -124,6 +130,7 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+      <ChatWidget />
     </div>
   );
 }

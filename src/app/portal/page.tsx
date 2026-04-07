@@ -62,8 +62,9 @@ export default function PortalPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary"></div>
+        <p className="text-xs text-text-secondary">Loading dashboard...</p>
       </div>
     );
   }
@@ -87,12 +88,29 @@ export default function PortalPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">
-          Welcome, {session?.user?.name}
-        </h1>
-        <p className="text-text-secondary text-sm mt-1">
-          {groupName ? `${groupName} · ` : ""}Your payment overview and contribution status
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text">
+              Welcome back, {session?.user?.name}
+            </h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Your payment overview and contribution status
+            </p>
+          </div>
+        </div>
+        {groupName && (
+          <div className="mt-4 inline-flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2.5">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs text-text-secondary leading-none">CDS Group</p>
+              <p className="text-sm font-semibold text-primary">{groupName}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {isCompleted && (
@@ -115,27 +133,27 @@ export default function PortalPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 transition-shadow hover:shadow-md">
           <p className="text-xs font-medium text-emerald-600 uppercase tracking-wide">
             Total Paid
           </p>
-          <p className="text-2xl font-bold text-emerald-700 mt-1">
+          <p className="text-2xl font-bold text-emerald-700 mt-2">
             {formatCurrency(totalPaid)}
           </p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 transition-shadow hover:shadow-md">
           <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">
             Payments Made
           </p>
-          <p className="text-2xl font-bold text-blue-700 mt-1">
+          <p className="text-2xl font-bold text-blue-700 mt-2">
             {payments.length}
           </p>
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 transition-shadow hover:shadow-md">
           <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">
             Active Categories
           </p>
-          <p className="text-2xl font-bold text-purple-700 mt-1">
+          <p className="text-2xl font-bold text-purple-700 mt-2">
             {categories.length}
           </p>
         </div>
@@ -150,7 +168,7 @@ export default function PortalPage() {
         {statusByCategory.map((cat) => (
           <div
             key={cat._id}
-            className="bg-white rounded-xl border border-border shadow-sm p-5"
+            className="bg-white rounded-xl border border-border shadow-sm p-5 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-text">{cat.name}</h3>

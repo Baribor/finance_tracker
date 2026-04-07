@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import SignupRequest from "@/models/SignupRequest";
 import Member from "@/models/Member";
 import Group from "@/models/Group";
+import { sendRegistrationConfirmationEmail } from "@/lib/email";
 
 // Public — no auth required
 export async function POST(req: NextRequest) {
@@ -83,6 +84,17 @@ export async function POST(req: NextRequest) {
     lga: lga?.trim() || "",
     state: state?.trim() || "",
   });
+
+  // Send confirmation email (non-blocking — don't fail the request if email fails)
+  try {
+    await sendRegistrationConfirmationEmail({
+      to: secretaryEmail.trim().toLowerCase(),
+      secretaryName: secretaryName.trim(),
+      groupName: groupName.trim(),
+    });
+  } catch {
+    console.error("Failed to send registration confirmation email");
+  }
 
   return NextResponse.json(
     {

@@ -259,3 +259,119 @@ ${opts.reason ? `Reason: ${opts.reason}\n\n` : ""}If you believe this is an erro
     html,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Email: Registration Confirmation (sent when signup form is submitted)
+// ---------------------------------------------------------------------------
+
+export async function sendRegistrationConfirmationEmail(opts: {
+  to: string;
+  secretaryName: string;
+  groupName: string;
+}) {
+  const html = baseTemplate(
+    "Registration request received",
+    `
+    ${heading("We received your registration")}
+    ${subheading("Your request is now pending admin review")}
+
+    ${paragraph(`Hello ${opts.secretaryName},`)}
+    ${paragraph(
+      `Thank you for submitting a registration request for <strong>${opts.groupName}</strong> on ${APP_NAME}.
+       Your request has been received and is now awaiting admin review.`
+    )}
+
+    ${infoBlock([
+      ["CDS Group", opts.groupName],
+      ["Secretary", opts.secretaryName],
+      ["Status", "Pending Review"],
+    ])}
+
+    ${paragraph(
+      `You will receive another email once an admin has reviewed and approved (or rejected) your request.
+       No further action is needed from you at this time.`
+    )}
+
+    ${divider()}
+
+    ${paragraph(
+      `<span style="font-size:13px;color:#6b7280;">
+        If you did not submit this request, you can safely ignore this email.
+      </span>`
+    )}
+  `
+  );
+
+  const text = `Hello ${opts.secretaryName},
+
+Thank you for submitting a registration request for "${opts.groupName}" on ${APP_NAME}.
+
+Your request has been received and is now awaiting admin review. You will receive another email once an admin has reviewed your request.
+
+— ${APP_NAME}`;
+
+  await transport.sendMail({
+    from: FROM,
+    to: opts.to,
+    subject: `Registration received — ${opts.groupName}`,
+    text,
+    html,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Email: Support Ticket Created
+// ---------------------------------------------------------------------------
+
+export async function sendTicketCreatedEmail(opts: {
+  to: string;
+  name: string;
+  ticketId: string;
+}) {
+  const html = baseTemplate(
+    "Support ticket created",
+    `
+    ${heading("Support Ticket Created")}
+    ${subheading("We have received your message")}
+
+    ${paragraph(`Hello ${opts.name},`)}
+    ${paragraph(
+      `Your support ticket has been created. Our team will review and respond as soon as possible.`
+    )}
+
+    ${infoBlock([
+      ["Ticket ID", `<strong style="font-family:monospace;font-size:15px;letter-spacing:1px;">${opts.ticketId}</strong>`],
+    ])}
+
+    ${paragraph(
+      `Save your ticket ID — you can use it anytime to check the status of your request or continue the conversation.`
+    )}
+
+    ${divider()}
+
+    ${paragraph(
+      `<span style="font-size:13px;color:#6b7280;">
+        If you did not create this ticket, you can safely ignore this email.
+      </span>`
+    )}
+  `
+  );
+
+  const text = `Hello ${opts.name},
+
+Your support ticket has been created.
+
+Ticket ID: ${opts.ticketId}
+
+Save this ID — you can use it to check status or continue the conversation.
+
+— ${APP_NAME}`;
+
+  await transport.sendMail({
+    from: FROM,
+    to: opts.to,
+    subject: `Support Ticket ${opts.ticketId} — ${APP_NAME}`,
+    text,
+    html,
+  });
+}

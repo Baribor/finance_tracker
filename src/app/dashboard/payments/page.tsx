@@ -22,9 +22,11 @@ interface Payment {
   method: string;
   shortCode?: string;
   note: string;
-  member: { name: string; stateCode: string };
-  category: { name: string; type: string; amount: number };
-  recordedBy: { name: string };
+  isAnonymous?: boolean;
+  description?: string;
+  member?: { name: string; stateCode: string };
+  category?: { name: string; type: string; amount: number };
+  recordedBy: { name: string } | null;
 }
 
 function formatCurrency(amount: number) {
@@ -41,11 +43,13 @@ export default function PaymentsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [memberId, setMemberId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -81,16 +85,26 @@ export default function PaymentsPage() {
     setError("");
     setSubmitting(true);
 
+    const payload = isAnonymous
+      ? {
+          isAnonymous: true,
+          description,
+          amount: Number(amount),
+          date: date || undefined,
+          note,
+        }
+      : {
+          member: memberId,
+          category: categoryId,
+          amount: Number(amount),
+          date: date || undefined,
+          note,
+        };
+
     const res = await fetch("/api/payments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        member: memberId,
-        category: categoryId,
-        amount: Number(amount),
-        date: date || undefined,
-        note,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -101,11 +115,13 @@ export default function PaymentsPage() {
       return;
     }
 
+    setIsAnonymous(false);
     setMemberId("");
     setCategoryId("");
     setAmount("");
     setDate("");
     setNote("");
+    setDescription("");
     setShowForm(false);
     fetchData();
   };
@@ -138,6 +154,94 @@ export default function PaymentsPage() {
                 {error}
               </div>
             )}
+
+            {/* Anonymous toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAnonymous(!isAnonymous);
+                  setMemberId("");
+                  setCategoryId("");
+                  setDescription("");
+                  setAmount("");
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  isAnonymous ? "bg-primary" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isAnonymous ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-text">
+                Anonymous Payment
+              </span>
+              <span className="text-xs text-text-secondary">
+                (donations, starting balance, etc.)
+              </span>
+            </div>
+
+            {isAnonymous ? (
+              /* Anonymous payment fields */
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1.5">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                    placeholder="e.g. Anonymous donation, Starting balance, Fundraiser proceeds"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-1.5">
+                      Amount (₦)
+                    </label>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                      min="0"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-1.5">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-1.5">
+                      Note (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                      placeholder="Optional note"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Regular member payment fields */
+              <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">
@@ -214,6 +318,8 @@ export default function PaymentsPage() {
                 />
               </div>
             </div>
+              </>
+            )}
             <button
               type="submit"
               disabled={submitting}
@@ -259,16 +365,29 @@ export default function PaymentsPage() {
               {payments.map((payment) => (
                 <tr key={payment._id} className="hover:bg-surface-alt/50">
                   <td className="p-4">
-                    <p className="text-sm font-medium text-text">
-                      {payment.member.name}
-                    </p>
-                    <p className="text-xs text-text-secondary">
-                      {payment.member.stateCode}
-                    </p>
+                    {payment.isAnonymous ? (
+                      <div>
+                        <p className="text-sm font-medium text-amber-700">
+                          Anonymous
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {payment.description}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-medium text-text">
+                          {payment.member?.name}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {payment.member?.stateCode}
+                        </p>
+                      </div>
+                    )}
                   </td>
                   <td className="p-4">
                     <span className="text-sm text-text">
-                      {payment.category.name}
+                      {payment.isAnonymous ? "—" : payment.category?.name}
                     </span>
                   </td>
                   <td className="p-4">
@@ -297,7 +416,7 @@ export default function PaymentsPage() {
                     })}
                   </td>
                   <td className="p-4 text-sm text-text-secondary">
-                    {payment.recordedBy.name}
+                    {payment.recordedBy?.name ?? "Unknown"}
                   </td>
                 </tr>
               ))}

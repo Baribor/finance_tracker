@@ -21,7 +21,11 @@ export async function GET(req: NextRequest) {
     filter.member = memberId;
   } else if (session.user.group) {
     const groupMembers = await Member.find({ group: session.user.group }).select("_id");
-    filter.member = { $in: groupMembers.map((m) => m._id) };
+    // Include group member payments AND anonymous payments recorded by group members
+    filter.$or = [
+      { member: { $in: groupMembers.map((m) => m._id) } },
+      { isAnonymous: true, recordedBy: { $in: groupMembers.map((m) => m._id) } },
+    ];
   }
 
   const payments = await Payment.find(filter)
@@ -41,7 +45,31 @@ export async function POST(req: NextRequest) {
 
   await dbConnect();
   const body = await req.json();
-  const { member, category, amount, date, note } = body;
+  const { member, category, amount, date, note, isAnonymous, description } = body;
+
+  if (isAnonymous) {
+    if (!amount || !description) {
+      return NextResponse.json(
+        { error: "Amount and description are required for anonymous payments" },
+        { status: 400 }
+      );
+    }
+
+    const payment = await Payment.create({
+      amount: Number(amount),
+      date: date || new Date(),
+      method: "direct",
+      recordedBy: session.user.id,
+      note: note?.trim() || "",
+      isAnonymous: true,
+      description: description.trim(),
+    });
+
+    const populated = await Payment.findById(payment._id)
+      .populate("recordedBy", "name");
+
+    return NextResponse.json(populated, { status: 201 });
+  }
 
   if (!member || !category || !amount) {
     return NextResponse.json(

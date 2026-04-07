@@ -23,8 +23,9 @@ export default function AdminLayout({
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary"></div>
+        <p className="text-xs text-text-secondary">Loading...</p>
       </div>
     );
   }

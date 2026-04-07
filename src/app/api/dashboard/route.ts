@@ -26,7 +26,14 @@ export async function GET() {
     : null;
   const memberIds = groupMembers ? groupMembers.map((m) => m._id) : null;
 
-  const paymentFilter = memberIds ? { member: { $in: memberIds } } : {};
+  const paymentFilter = memberIds
+    ? {
+        $or: [
+          { member: { $in: memberIds } },
+          { isAnonymous: true, recordedBy: { $in: memberIds } },
+        ],
+      }
+    : {};
   const categoryFilter: Record<string, unknown> = { isActive: true };
 
   const [totalIncome, totalExpenses, memberCount, categoryCount] =
@@ -50,7 +57,8 @@ export async function GET() {
     .populate("member", "name stateCode")
     .populate("category", "name")
     .sort({ createdAt: -1 })
-    .limit(5);
+    .limit(5)
+    .lean();
 
   const expenseFilter: Record<string, unknown> = {};
   if (groupId) {

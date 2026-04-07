@@ -31,8 +31,9 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary"></div>
+        <p className="text-xs text-text-secondary">Loading overview...</p>
       </div>
     );
   }
@@ -85,11 +86,11 @@ export default function AdminDashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className={`rounded-xl border p-5 ${stat.color}`}
+            className={`rounded-xl border p-5 transition-shadow hover:shadow-md ${stat.color}`}
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{stat.icon}</span>
-              <span className="text-xs font-medium uppercase tracking-wide opacity-80">
+              <span className="text-xs font-medium uppercase tracking-wide opacity-70">
                 {stat.label}
               </span>
             </div>

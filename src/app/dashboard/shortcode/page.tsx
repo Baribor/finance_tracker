@@ -14,8 +14,10 @@ interface ValidationResult {
   payment: {
     _id: string;
     amount: number;
-    member: { name: string; stateCode: string };
-    category: { name: string };
+    member: { name: string; stateCode: string } | null;
+    category: { name: string } | null;
+    isAnonymous?: boolean;
+    description?: string;
   };
   message: string;
 }
@@ -114,14 +116,13 @@ export default function ShortCodePage() {
               <div className="flex justify-between">
                 <span className="text-green-600">Member:</span>
                 <span className="font-medium text-green-800">
-                  {result.payment.member.name} (
-                  {result.payment.member.stateCode})
+                  {result.payment.member ? `${result.payment.member.name} (${result.payment.member.stateCode})` : "Anonymous"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-green-600">Category:</span>
                 <span className="font-medium text-green-800">
-                  {result.payment.category.name}
+                  {result.payment.category?.name ?? "—"}
                 </span>
               </div>
               <div className="flex justify-between">
