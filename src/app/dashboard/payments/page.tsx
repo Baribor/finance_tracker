@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, useRef } from "react";
 
 interface Member {
   _id: string;
@@ -52,6 +52,26 @@ export default function PaymentsPage() {
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const memberDropdownRef = useRef<HTMLDivElement>(null);
+
+  const filteredMembers = members.filter(
+    (m) =>
+      m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.stateCode.toLowerCase().includes(memberSearch.toLowerCase())
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (memberDropdownRef.current && !memberDropdownRef.current.contains(e.target as Node)) {
+        setShowMemberDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchData = async () => {
     const [paymentsRes, membersRes, categoriesRes] = await Promise.all([
@@ -83,6 +103,11 @@ export default function PaymentsPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!isAnonymous && !memberId) {
+      setError("Please select a member from the dropdown");
+      return;
+    }
     setSubmitting(true);
 
     const payload = isAnonymous
@@ -117,6 +142,7 @@ export default function PaymentsPage() {
 
     setIsAnonymous(false);
     setMemberId("");
+    setMemberSearch("");
     setCategoryId("");
     setAmount("");
     setDate("");
@@ -162,6 +188,7 @@ export default function PaymentsPage() {
                 onClick={() => {
                   setIsAnonymous(!isAnonymous);
                   setMemberId("");
+                  setMemberSearch("");
                   setCategoryId("");
                   setDescription("");
                   setAmount("");
@@ -243,23 +270,56 @@ export default function PaymentsPage() {
               /* Regular member payment fields */
               <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div ref={memberDropdownRef} className="relative">
                 <label className="block text-sm font-medium text-text mb-1.5">
                   Member
                 </label>
-                <select
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
+                <input
+                  type="text"
+                  value={memberSearch}
+                  onChange={(e) => {
+                    setMemberSearch(e.target.value);
+                    setMemberId("");
+                    setShowMemberDropdown(true);
+                  }}
+                  onFocus={() => setShowMemberDropdown(true)}
                   className="w-full px-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white"
-                  required
-                >
-                  <option value="">Select member</option>
-                  {members.map((m) => (
-                    <option key={m._id} value={m._id}>
-                      {m.name} ({m.stateCode})
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Type to search members..."
+                  required={!memberId}
+                  autoComplete="off"
+                />
+                {memberId && (
+                  <input type="hidden" name="memberId" value={memberId} />
+                )}
+                {showMemberDropdown && (
+                  <div className="absolute z-10 mt-1 w-full bg-white border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {filteredMembers.length === 0 ? (
+                      <div className="px-4 py-2.5 text-sm text-text-secondary">
+                        No members found
+                      </div>
+                    ) : (
+                      filteredMembers.map((m) => (
+                        <button
+                          key={m._id}
+                          type="button"
+                          onClick={() => {
+                            setMemberId(m._id);
+                            setMemberSearch(`${m.name} (${m.stateCode})`);
+                            setShowMemberDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-surface-alt transition-colors ${
+                            memberId === m._id ? "bg-primary/5 text-primary font-medium" : "text-text"
+                          }`}
+                        >
+                          {m.name}{" "}
+                          <span className="text-text-secondary">
+                            ({m.stateCode})
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-text mb-1.5">

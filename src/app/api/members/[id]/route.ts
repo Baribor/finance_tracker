@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import dbConnect from "@/lib/mongodb";
 import Member from "@/models/Member";
-import Payment from "@/models/Payment";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -33,10 +33,24 @@ export async function PATCH(
     member.serviceStatus = "completed";
     member.serviceCompletedAt = new Date();
     await member.save();
+
+    await logAudit({
+      action: "member.service_completed",
+      performedBy: session.user.id,
+      targetType: "Member",
+      targetId: id,
+      group: session.user.group,
+      details: `Marked ${member.name} (${member.stateCode}) as service completed`,
+      meta: { memberName: member.name, stateCode: member.stateCode },
+    });
+
     const result = member.toObject();
     delete (result as unknown as Record<string, unknown>).password;
     return NextResponse.json(result);
   }
+
+  // Track deactivation/activation
+  const prevMember = body.isActive !== undefined ? await Member.findById(id) : null;
 
   const member = await Member.findByIdAndUpdate(id, body, {
     new: true,
@@ -46,10 +60,22 @@ export async function PATCH(
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
   }
 
+  if (prevMember && body.isActive !== undefined && body.isActive !== prevMember.isActive) {
+    await logAudit({
+      action: body.isActive ? "member.activate" : "member.deactivate",
+      performedBy: session.user.id,
+      targetType: "Member",
+      targetId: id,
+      group: session.user.group,
+      details: `${body.isActive ? "Activated" : "Deactivated"} member ${member.name} (${member.stateCode})`,
+      meta: { memberName: member.name, stateCode: member.stateCode },
+    });
+  }
+
   return NextResponse.json(member);
 }
 
-// Hard delete — only allowed if the member has no payment records
+// Soft delete — deactivate the member
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -74,16 +100,18 @@ export async function DELETE(
     );
   }
 
-  // Check for any payment records
-  const paymentCount = await Payment.countDocuments({ member: id });
-  if (paymentCount > 0) {
-    return NextResponse.json(
-      { error: "Cannot delete member with existing payment records. Deactivate instead." },
-      { status: 400 }
-    );
-  }
+  member.isActive = false;
+  await member.save();
 
-  await Member.findByIdAndDelete(id);
+  await logAudit({
+    action: "member.delete",
+    performedBy: session.user.id,
+    targetType: "Member",
+    targetId: id,
+    group: session.user.group,
+    details: `Soft-deleted member ${member.name} (${member.stateCode})`,
+    meta: { memberName: member.name, stateCode: member.stateCode },
+  });
 
   return NextResponse.json({ message: "Member deleted" });
 }

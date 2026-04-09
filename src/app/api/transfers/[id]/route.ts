@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import TransferRequest from "@/models/TransferRequest";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 // PATCH: Approve or reject a transfer request (only the fromGroup secretary can do this)
 export async function PATCH(
@@ -67,6 +68,15 @@ export async function PATCH(
     .populate("toGroup", "name")
     .populate("requestedBy", "name")
     .populate("resolvedBy", "name");
+
+  await logAudit({
+    action: action === "approve" ? "transfer.approve" : "transfer.reject",
+    performedBy: session.user.id,
+    targetType: "TransferRequest",
+    targetId: id,
+    group: session.user.group,
+    details: `${action === "approve" ? "Approved" : "Rejected"} transfer request for ${(populated?.member as unknown as { name: string })?.name ?? "unknown"}`,
+  });
 
   return NextResponse.json(populated);
 }

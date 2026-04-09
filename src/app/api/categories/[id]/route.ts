@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import dbConnect from "@/lib/mongodb";
 import Category from "@/models/Category";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -47,6 +48,16 @@ export async function DELETE(
   if (!category) {
     return NextResponse.json({ error: "Category not found" }, { status: 404 });
   }
+
+  await logAudit({
+    action: "category.delete",
+    performedBy: session.user.id,
+    targetType: "Category",
+    targetId: id,
+    group: session.user.group,
+    details: `Removed category "${category.name}"`,
+    meta: { categoryName: category.name },
+  });
 
   return NextResponse.json(category);
 }

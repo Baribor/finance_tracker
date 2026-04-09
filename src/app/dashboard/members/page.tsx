@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, useRef, FormEvent } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface Member {
@@ -32,6 +32,19 @@ export default function MembersPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [dialogAction, setDialogAction] = useState<DialogAction | null>(null);
   const [actionError, setActionError] = useState("");
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const fetchMembers = async () => {
     const res = await fetch("/api/members");
@@ -360,58 +373,59 @@ export default function MembersPage() {
                   </td>
                   <td className="p-4 text-right">
                     {member.role !== "secretary" && (
-                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                      <div className="relative inline-block" ref={openMenu === member._id ? menuRef : undefined}>
                         <button
-                          onClick={() =>
-                            setDialogAction({ type: "reset", member })
-                          }
-                          className="text-xs font-medium px-2 py-1.5 rounded-lg transition-colors text-primary hover:bg-primary/10"
+                          onClick={() => setOpenMenu(openMenu === member._id ? null : member._id)}
+                          className="p-1.5 rounded-lg hover:bg-surface-alt transition-colors text-text-secondary hover:text-text"
+                          title="Actions"
                         >
-                          Reset PW
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="12" cy="19" r="2" />
+                          </svg>
                         </button>
-                        {member.isActive && member.serviceStatus === "serving" && (
-                          <button
-                            onClick={() =>
-                              setDialogAction({ type: "transfer-role", member })
-                            }
-                            className="text-xs font-medium px-2 py-1.5 rounded-lg transition-colors text-purple-600 hover:bg-purple-50"
-                          >
-                            Make Secretary
-                          </button>
+                        {openMenu === member._id && (
+                          <div className="absolute right-0 mt-1 w-44 bg-white border border-border rounded-lg shadow-lg z-20 py-1">
+                            <button
+                              onClick={() => { setOpenMenu(null); setDialogAction({ type: "reset", member }); }}
+                              className="w-full text-left px-3 py-2 text-sm text-text hover:bg-surface-alt transition-colors"
+                            >
+                              Reset Password
+                            </button>
+                            {member.isActive && member.serviceStatus === "serving" && (
+                              <button
+                                onClick={() => { setOpenMenu(null); setDialogAction({ type: "transfer-role", member }); }}
+                                className="w-full text-left px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+                              >
+                                Make Secretary
+                              </button>
+                            )}
+                            {member.isActive && member.serviceStatus === "serving" && (
+                              <button
+                                onClick={() => { setOpenMenu(null); setDialogAction({ type: "complete", member }); }}
+                                className="w-full text-left px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
+                              >
+                                Complete Service
+                              </button>
+                            )}
+                            <button
+                              onClick={() => { setOpenMenu(null); setDialogAction({ type: member.isActive ? "deactivate" : "activate", member }); }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                                member.isActive ? "text-danger hover:bg-red-50" : "text-success hover:bg-green-50"
+                              }`}
+                            >
+                              {member.isActive ? "Deactivate" : "Activate"}
+                            </button>
+                            <div className="border-t border-border my-1" />
+                            <button
+                              onClick={() => { setOpenMenu(null); setDialogAction({ type: "delete", member }); }}
+                              className="w-full text-left px-3 py-2 text-sm text-danger hover:bg-red-50 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         )}
-                        {member.isActive && member.serviceStatus === "serving" && (
-                          <button
-                            onClick={() =>
-                              setDialogAction({ type: "complete", member })
-                            }
-                            className="text-xs font-medium px-2 py-1.5 rounded-lg transition-colors text-orange-600 hover:bg-orange-50"
-                          >
-                            Complete Service
-                          </button>
-                        )}
-                        <button
-                          onClick={() =>
-                            setDialogAction({
-                              type: member.isActive ? "deactivate" : "activate",
-                              member,
-                            })
-                          }
-                          className={`text-xs font-medium px-2 py-1.5 rounded-lg transition-colors ${
-                            member.isActive
-                              ? "text-danger hover:bg-red-50"
-                              : "text-success hover:bg-green-50"
-                          }`}
-                        >
-                          {member.isActive ? "Deactivate" : "Activate"}
-                        </button>
-                        <button
-                          onClick={() =>
-                            setDialogAction({ type: "delete", member })
-                          }
-                          className="text-xs font-medium px-2 py-1.5 rounded-lg transition-colors text-danger hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
                       </div>
                     )}
                   </td>

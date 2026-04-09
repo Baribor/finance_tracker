@@ -7,6 +7,7 @@ import Group from "@/models/Group";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 export async function PATCH(
   req: NextRequest,
@@ -61,6 +62,15 @@ export async function PATCH(
         console.error("[email] Failed to send rejection email:", err)
       );
     }
+
+    await logAudit({
+      action: "signup_request.reject",
+      performedBy: session.user.id,
+      targetType: "SignupRequest",
+      targetId: id,
+      details: `Rejected signup request for group "${request.groupName}"`,
+      meta: { groupName: request.groupName, secretaryName: request.secretaryName },
+    });
 
     return NextResponse.json({ message: "Request rejected" });
   }
@@ -117,7 +127,14 @@ export async function PATCH(
       console.error("[email] Failed to send approval email:", err)
     );
   }
-
+  await logAudit({
+    action: "signup_request.approve",
+    performedBy: session.user.id,
+    targetType: "SignupRequest",
+    targetId: id,
+    details: `Approved signup request — created group "${group.name}" with secretary ${request.secretaryName}`,
+    meta: { groupName: group.name, secretaryName: request.secretaryName, groupId: group._id.toString() },
+  });
   return NextResponse.json({
     message: `Group "${group.name}" created and secretary account activated`,
     group: { id: group._id, name: group.name },

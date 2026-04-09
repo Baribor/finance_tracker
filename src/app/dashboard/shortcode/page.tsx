@@ -81,7 +81,7 @@ export default function ShortCodePage() {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-lg font-mono tracking-widest text-center uppercase"
                 placeholder="ENTER CODE"
-                maxLength={8}
+                maxLength={4}
                 required
               />
             </div>

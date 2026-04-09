@@ -44,6 +44,7 @@ export default function PortalShortCodePage() {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState<GeneratedCode | null>(null);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const isCompleted = session?.user?.serviceStatus === "completed";
 
@@ -88,6 +89,13 @@ export default function PortalShortCodePage() {
     setGenerated(data);
     setCategoryId("");
     fetchData();
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
+    const res = await fetch(`/api/shortcodes?id=${id}`, { method: "DELETE" });
+    setDeleting(null);
+    if (res.ok) fetchData();
   };
 
   if (loading) {
@@ -199,6 +207,7 @@ export default function PortalShortCodePage() {
                       <span className="font-mono font-bold text-sm text-text">
                         {sc.code}
                       </span>
+                      <div className="flex items-center gap-2">
                       <span
                         className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           sc.isUsed
@@ -214,6 +223,17 @@ export default function PortalShortCodePage() {
                           ? "Expired"
                           : "Pending"}
                       </span>
+                      {(sc.isUsed || new Date(sc.expiresAt) < new Date()) && (
+                        <button
+                          onClick={() => handleDelete(sc._id)}
+                          disabled={deleting === sc._id}
+                          className="text-xs text-red-500 hover:text-red-700 disabled:opacity-50"
+                          title="Delete code"
+                        >
+                          {deleting === sc._id ? "…" : "✕"}
+                        </button>
+                      )}
+                      </div>
                     </div>
                     <p className="text-xs text-text-secondary">
                       {sc.category.name} · {formatCurrency(sc.amount)} ·{" "}

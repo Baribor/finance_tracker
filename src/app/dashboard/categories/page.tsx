@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 interface Category {
   _id: string;
@@ -21,6 +22,7 @@ function formatCurrency(amount: number) {
 }
 
 export default function CategoriesPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -183,7 +185,8 @@ export default function CategoriesPage() {
           {categories.map((cat) => (
             <div
               key={cat._id}
-              className="bg-white rounded-xl border border-border shadow-sm p-5"
+              onClick={() => router.push(`/dashboard/categories/${cat._id}`)}
+              className="bg-white rounded-xl border border-border shadow-sm p-5 cursor-pointer hover:border-primary/30 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -217,7 +220,7 @@ export default function CategoriesPage() {
                   })}
                 </span>
                 <button
-                  onClick={() => deleteCategory(cat._id)}
+                  onClick={(e) => { e.stopPropagation(); deleteCategory(cat._id); }}
                   className="text-xs text-danger hover:bg-red-50 px-2 py-1 rounded transition-colors"
                 >
                   Remove

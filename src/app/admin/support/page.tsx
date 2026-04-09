@@ -40,7 +40,9 @@ export default function AdminSupportPage() {
   };
 
   useEffect(() => {
-    fetchTickets();
+    (async () => {
+      await fetchTickets();
+    })();
     const interval = setInterval(fetchTickets, 15000);
     return () => clearInterval(interval);
   }, []);
@@ -123,9 +125,9 @@ export default function AdminSupportPage() {
         </p>
       </div>
 
-      <div className="flex gap-6 h-[calc(100vh-200px)] min-h-[500px]">
+      <div className="flex gap-6 h-[calc(100vh-200px)] min-h-125">
         {/* Ticket list */}
-        <div className="w-[360px] shrink-0 bg-white rounded-xl border border-border shadow-sm flex flex-col overflow-hidden">
+        <div className="w-90 shrink-0 bg-white rounded-xl border border-border shadow-sm flex flex-col overflow-hidden">
           {/* Filter tabs */}
           <div className="flex border-b border-border shrink-0">
             {(["all", "open", "closed"] as const).map((f) => (
@@ -258,7 +260,7 @@ export default function AdminSupportPage() {
                           ? `${msg.sender} (You)`
                           : msg.sender}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap break-words">
+                      <p className="text-sm whitespace-pre-wrap wrap-break-word">
                         {msg.content}
                       </p>
                       <p

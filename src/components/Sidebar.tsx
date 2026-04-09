@@ -10,6 +10,7 @@ const adminLinks = [
   { href: "/admin/groups", label: "CDS Groups", icon: "🏢" },
   { href: "/admin/signup-requests", label: "Signup Requests", icon: "📋" },
   { href: "/admin/support", label: "Support Tickets", icon: "💬" },
+  { href: "/admin/audit-logs", label: "Audit Log", icon: "📜" },
 ];
 
 const secretaryLinks = [
