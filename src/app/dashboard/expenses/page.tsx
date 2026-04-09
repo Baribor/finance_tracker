@@ -8,7 +8,7 @@ interface Expense {
   amount: number;
   date: string;
   category: string;
-  recordedBy: { name: string };
+  recordedBy: { name: string } | null;
   createdAt: string;
 }
 
@@ -237,7 +237,7 @@ export default function ExpensesPage() {
                     })}
                   </td>
                   <td className="p-4 text-sm text-text-secondary">
-                    {expense.recordedBy.name}
+                    {expense.recordedBy?.name ?? "Unknown"}
                   </td>
                 </tr>
               ))}

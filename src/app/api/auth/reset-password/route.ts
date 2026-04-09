@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 // Secretary resets a member's password to their state code
 export async function POST(req: NextRequest) {
@@ -39,6 +40,16 @@ export async function POST(req: NextRequest) {
   member.password = await bcrypt.hash(member.stateCode, 12);
   member.mustChangePassword = true;
   await member.save();
+
+  await logAudit({
+    action: "member.password_reset",
+    performedBy: session.user.id,
+    targetType: "Member",
+    targetId: memberId,
+    group: session.user.group,
+    details: `Reset password for ${member.name} (${member.stateCode})`,
+    meta: { memberName: member.name, stateCode: member.stateCode },
+  });
 
   return NextResponse.json({
     message: `Password for ${member.name} has been reset to their state code`,

@@ -3,9 +3,11 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 export interface IShortCode extends Document {
   code: string;
   member: Types.ObjectId;
+  group: Types.ObjectId;
   category: Types.ObjectId;
   amount: number;
   isUsed: boolean;
+  isDeleted: boolean;
   usedAt?: Date;
   expiresAt: Date;
   createdAt: Date;
@@ -14,17 +16,20 @@ export interface IShortCode extends Document {
 
 const ShortCodeSchema = new Schema<IShortCode>(
   {
-    code: { type: String, required: true, unique: true },
+    code: { type: String, required: true },
     member: { type: Schema.Types.ObjectId, ref: "Member", required: true },
+    group: { type: Schema.Types.ObjectId, ref: "Group", required: true },
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     amount: { type: Number, required: true, min: 0 },
     isUsed: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
     usedAt: { type: Date, default: null },
     expiresAt: { type: Date, required: true },
   },
   { timestamps: true }
 );
 
+ShortCodeSchema.index({ code: 1, group: 1 }, { unique: true });
 ShortCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const ShortCode: Model<IShortCode> =

@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
   const shortCode = await ShortCode.findOne({
     code: code.trim().toUpperCase(),
+    group: session.user.group,
   })
     .populate("member", "name stateCode")
     .populate("category", "name type amount");

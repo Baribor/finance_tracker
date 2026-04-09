@@ -7,8 +7,10 @@ interface Payment {
   amount: number;
   date: string;
   method: string;
-  member: { name: string; stateCode: string };
-  category: { name: string };
+  isAnonymous?: boolean;
+  description?: string;
+  member?: { name: string; stateCode: string };
+  category?: { name: string };
   recordedBy: { name: string };
 }
 
@@ -52,10 +54,12 @@ export default function LedgerView() {
       const incomeEntries: LedgerEntry[] = payments.map((p) => ({
         id: p._id,
         date: p.date,
-        description: `${p.member.name} - ${p.category.name}`,
+        description: p.isAnonymous
+          ? p.description || "Anonymous payment"
+          : `${p.member?.name ?? "Unknown"} - ${p.category?.name ?? "Uncategorized"}`,
         type: "income" as const,
         amount: p.amount,
-        by: p.recordedBy.name,
+        by: p.recordedBy?.name ?? "Unknown",
       }));
 
       const expenseEntries: LedgerEntry[] = expenses.map((e) => ({
@@ -64,7 +68,7 @@ export default function LedgerView() {
         description: `${e.description} (${e.category})`,
         type: "expense" as const,
         amount: e.amount,
-        by: e.recordedBy.name,
+        by: e.recordedBy?.name ?? "Unknown",
       }));
 
       const all = [...incomeEntries, ...expenseEntries].sort(

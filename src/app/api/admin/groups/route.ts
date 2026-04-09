@@ -5,6 +5,7 @@ import dbConnect from "@/lib/mongodb";
 import Group from "@/models/Group";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 // Get all groups
 export async function GET() {
@@ -89,6 +90,15 @@ export async function POST(req: NextRequest) {
     role: "secretary",
     group: group._id,
     mustChangePassword: true,
+  });
+
+  await logAudit({
+    action: "group.create",
+    performedBy: session.user.id,
+    targetType: "Group",
+    targetId: group._id.toString(),
+    details: `Created group "${group.name}" with secretary ${secretaryName.trim()}`,
+    meta: { groupName: group.name, secretaryName: secretaryName.trim() },
   });
 
   return NextResponse.json(group, { status: 201 });

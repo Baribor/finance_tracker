@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -64,6 +65,16 @@ export async function POST(req: NextRequest) {
   const memberObj = member.toObject();
   const { password: _, ...memberWithoutPassword } = memberObj;
   void _;
+
+  await logAudit({
+    action: "member.create",
+    performedBy: session.user.id,
+    targetType: "Member",
+    targetId: member._id.toString(),
+    group: session.user.group,
+    details: `Added new member ${name.trim()} (${stateCode.trim()})`,
+    meta: { memberName: name.trim(), stateCode: stateCode.trim() },
+  });
 
   return NextResponse.json(memberWithoutPassword, { status: 201 });
 }

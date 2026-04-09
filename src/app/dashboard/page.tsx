@@ -12,8 +12,10 @@ interface DashboardData {
     _id: string;
     amount: number;
     date: string;
-    member: { name: string; stateCode: string };
-    category: { name: string };
+    member: { name: string; stateCode: string } | null;
+    category: { name: string } | null;
+    isAnonymous?: boolean;
+    description?: string;
   }>;
   recentExpenses: Array<{
     _id: string;
@@ -43,19 +45,26 @@ function formatDate(date: string) {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [groupName, setGroupName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((res) => res.json())
-      .then(setData)
+    Promise.all([
+      fetch("/api/dashboard").then((r) => r.json()),
+      fetch("/api/groups/me").then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([dashData, grpData]) => {
+        setData(dashData);
+        if (grpData?.name) setGroupName(grpData.name);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary"></div>
+        <p className="text-xs text-text-secondary">Loading dashboard...</p>
       </div>
     );
   }
@@ -98,21 +107,38 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text">Dashboard</h1>
-        <p className="text-text-secondary text-sm mt-1">
-          Financial overview at a glance
-        </p>
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-text">Dashboard</h1>
+            <p className="text-text-secondary text-sm mt-1">
+              Financial overview at a glance
+            </p>
+          </div>
+          {groupName && (
+            <div className="inline-flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2.5">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-text-secondary leading-none">CDS Group</p>
+                <p className="text-sm font-semibold text-primary">{groupName}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className={`rounded-xl border p-5 ${stat.color}`}
+            className={`rounded-xl border p-5 transition-shadow hover:shadow-md ${stat.color}`}
           >
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">{stat.icon}</span>
-              <span className="text-xs font-medium uppercase tracking-wide opacity-80">
+              <span className="text-xs font-medium uppercase tracking-wide opacity-70">
                 {stat.label}
               </span>
             </div>
@@ -123,29 +149,32 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Payments */}
-        <div className="bg-white rounded-xl border border-border shadow-sm">
-          <div className="p-5 border-b border-border">
-            <h2 className="text-lg font-semibold text-text">
+        <div className="bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+          <div className="p-5 border-b border-border flex items-center justify-between">
+            <h2 className="text-base font-semibold text-text">
               Recent Payments
             </h2>
+            <span className="text-xs text-text-secondary">{data.recentPayments.length} latest</span>
           </div>
           <div className="divide-y divide-border">
             {data.recentPayments.length === 0 ? (
-              <p className="p-5 text-sm text-text-secondary">
-                No payments recorded yet
-              </p>
+              <div className="p-8 text-center">
+                <p className="text-sm text-text-secondary">
+                  No payments recorded yet
+                </p>
+              </div>
             ) : (
               data.recentPayments.map((payment) => (
                 <div
                   key={payment._id}
-                  className="p-4 flex items-center justify-between"
+                  className="p-4 flex items-center justify-between hover:bg-surface-alt transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-text">
-                      {payment.member.name}
+                      {payment.isAnonymous ? (payment.description || "Anonymous") : (payment.member?.name ?? "Unknown")}
                     </p>
-                    <p className="text-xs text-text-secondary">
-                      {payment.category.name} · {formatDate(payment.date)}
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      {payment.isAnonymous ? "Anonymous" : (payment.category?.name ?? "Uncategorized")} · {formatDate(payment.date)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">
@@ -158,28 +187,31 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Expenses */}
-        <div className="bg-white rounded-xl border border-border shadow-sm">
-          <div className="p-5 border-b border-border">
-            <h2 className="text-lg font-semibold text-text">
+        <div className="bg-white rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
+          <div className="p-5 border-b border-border flex items-center justify-between">
+            <h2 className="text-base font-semibold text-text">
               Recent Expenses
             </h2>
+            <span className="text-xs text-text-secondary">{data.recentExpenses.length} latest</span>
           </div>
           <div className="divide-y divide-border">
             {data.recentExpenses.length === 0 ? (
-              <p className="p-5 text-sm text-text-secondary">
-                No expenses recorded yet
-              </p>
+              <div className="p-8 text-center">
+                <p className="text-sm text-text-secondary">
+                  No expenses recorded yet
+                </p>
+              </div>
             ) : (
               data.recentExpenses.map((expense) => (
                 <div
                   key={expense._id}
-                  className="p-4 flex items-center justify-between"
+                  className="p-4 flex items-center justify-between hover:bg-surface-alt transition-colors"
                 >
                   <div>
                     <p className="text-sm font-medium text-text">
                       {expense.description}
                     </p>
-                    <p className="text-xs text-text-secondary">
+                    <p className="text-xs text-text-secondary mt-0.5">
                       {expense.category} · {formatDate(expense.date)}
                     </p>
                   </div>

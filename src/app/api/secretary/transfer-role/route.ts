@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import dbConnect from "@/lib/mongodb";
 import Member from "@/models/Member";
 import { authOptions } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 
 // Transfer secretary role to another member in the same group
 export async function POST(req: NextRequest) {
@@ -57,6 +58,16 @@ export async function POST(req: NextRequest) {
   targetMember.role = "secretary";
 
   await Promise.all([currentSecretary.save(), targetMember.save()]);
+
+  await logAudit({
+    action: "secretary.transfer",
+    performedBy: session.user.id,
+    targetType: "Member",
+    targetId: memberId,
+    group: session.user.group,
+    details: `Secretary role transferred from ${currentSecretary.name} to ${targetMember.name}`,
+    meta: { from: currentSecretary.name, to: targetMember.name },
+  });
 
   return NextResponse.json({
     message: `Secretary role transferred to ${targetMember.name}`,

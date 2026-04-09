@@ -10,7 +10,7 @@ interface Payment {
   method: string;
   shortCode?: string;
   note: string;
-  category: { name: string; type: string };
+  category: { name: string; type: string } | null;
   recordedBy: { name: string };
 }
 
@@ -81,8 +81,9 @@ export default function PortalPaymentsPage() {
               <tr key={payment._id} className="hover:bg-surface-alt/50">
                 <td className="p-4">
                   <span className="text-sm font-medium text-text">
-                    {payment.category.name}
+                    {payment.category?.name ?? "Uncategorized"}
                   </span>
+                  {payment.category?.type && (
                   <span
                     className={`ml-2 inline-flex px-2 py-0.5 rounded-full text-xs ${
                       payment.category.type === "monthly"
@@ -92,6 +93,7 @@ export default function PortalPaymentsPage() {
                   >
                     {payment.category.type}
                   </span>
+                  )}
                 </td>
                 <td className="p-4">
                   <span className="text-sm font-semibold text-success">
